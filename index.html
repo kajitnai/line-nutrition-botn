@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>栄養計算アプリ</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    label { display: block; margin-top: 10px; }
+    input, button { padding: 8px; margin-top: 5px; }
+    #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>🍴 栄養計算アプリ</h1>
+  <p>料理名とグラム数を入力してください。</p>
+
+  <label for="food">料理名:</label>
+  <input type="text" id="food" placeholder="例: カレーライス">
+
+  <label for="grams">グラム数:</label>
+  <input type="number" id="grams" placeholder="例: 200">
+
+  <button onclick="calculate()">栄養計算</button>
+
+  <div id="result"></div>
+
+  <script>
+    function calculate() {
+      const food = document.getElementById("food").value;
+      const grams = parseInt(document.getElementById("grams").value);
+
+      if (!food || isNaN(grams)) {
+        document.getElementById("result").innerHTML = "料理名とグラム数を正しく入力してください。";
+        return;
+      }
+
+      // 仮の栄養計算（実際はデータベース/APIが必要）
+      const nutrition = {
+        calories: (1.75 * grams).toFixed(1),
+        protein: (0.05 * grams).toFixed(1),
+        fat: (0.04 * grams).toFixed(1),
+        carbs: (0.3 * grams).toFixed(1),
+        vitaminA: 50,
+        vitaminC: 12,
+        calcium: 20,
+        iron: 1.5
+      };
+
+      const result = `
+        <h3>${food} ${grams}g の栄養素</h3>
+        <ul>
+          <li>カロリー: ${nutrition.calories} kcal</li>
+          <li>たんぱく質: ${nutrition.protein} g</li>
+          <li>脂質: ${nutrition.fat} g</li>
+          <li>炭水化物: ${nutrition.carbs} g</li>
+          <li>ビタミン: A ${nutrition.vitaminA}µg, C ${nutrition.vitaminC}mg</li>
+          <li>ミネラル: Ca ${nutrition.calcium}mg, Fe ${nutrition.iron}mg</li>
+        </ul>
+      `;
+      document.getElementById("result").innerHTML = result;
+    }
+  </script>
+</body>
+</html>
+
