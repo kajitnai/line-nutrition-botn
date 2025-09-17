@@ -1,66 +1,411 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>栄養計算アプリ</title>
+  <meta charset="utf-8" />
+  <title>栄養計算アプリ（食品ごとに変わる）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #333; }
-    label { display: block; margin-top: 10px; }
-    input, button { padding: 8px; margin-top: 5px; }
-    #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    /* --- ベーシックスタイル --- */
+    :root{
+      --bg:#f6f8fb;
+      --card:#fff;
+      --accent:#2e8b57;
+      --muted:#777;
+      --radius:10px;
+      --shadow:0 6px 18px rgba(0,0,0,0.08);
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",Roboto,Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:var(--font);
+      margin:0;
+      background:var(--bg);
+      padding:20px;
+      color:#222;
+    }
+    .container{
+      max-width:780px;
+      margin:0 auto;
+    }
+
+    header h1{
+      margin:8px 0 18px 0;
+      color:var(--accent);
+      text-align:center;
+    }
+    .card{
+      background:var(--card);
+      padding:18px;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      margin-bottom:18px;
+    }
+
+    label{display:block;font-weight:600;margin-top:10px;color:var(--muted)}
+    input[type="text"], input[type="number"], select{
+      width:100%;
+      padding:10px;
+      margin-top:6px;
+      border:1px solid #ddd;
+      border-radius:8px;
+      font-size:15px;
+    }
+    .row{display:flex; gap:12px}
+    .row > * {flex:1}
+    button{
+      display:inline-block;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:12px 14px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      margin-top:12px;
+    }
+    button.secondary{
+      background:#4a90e2;
+    }
+    .result-title{color:var(--accent);margin:0 0 8px 0}
+    ul.nutri{list-style:none;padding-left:0;margin:0}
+    ul.nutri li{padding:8px 0;border-bottom:1px dashed #eee}
+
+    .muted{color:var(--muted);font-size:13px;margin-top:8px}
+
+    /* small screens */
+    @media (max-width:480px){
+      .row{flex-direction:column}
+    }
+
+    /* ヘルプ領域 */
+    details{margin-top:10px}
+    .small{font-size:13px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>🍴 栄養計算アプリ</h1>
-  <p>料理名とグラム数を入力してください。</p>
+  <div class="container">
+    <header>
+      <h1>🍽️ 栄養計算（食品データベース対応）</h1>
+      <p class="small">ドロップダウンから食品を選ぶか自由入力してください。グラム数を入れて「計算」を押すと、その食品の栄養素が表示されます。</p>
+    </header>
 
-  <label for="food">料理名:</label>
-  <input type="text" id="food" placeholder="例: カレーライス">
+    <section class="card">
+      <label for="foodInput">食品（選択 or 入力）</label>
 
-  <label for="grams">グラム数:</label>
-  <input type="number" id="grams" placeholder="例: 200">
+      <!-- datalistで候補を表示 -->
+      <input list="foodList" id="foodInput" placeholder="例: 白ごはん, カレーライス, 鶏むね肉">
+      <datalist id="foodList"></datalist>
 
-  <button onclick="calculate()">栄養計算</button>
+      <label for="grams">重さ（g）</label>
+      <input type="number" id="grams" placeholder="例: 200" min="1">
 
-  <div id="result"></div>
+      <div class="row">
+        <button id="calcBtn">栄養計算</button>
+        <button class="secondary" id="addBtn">食品データを追加・編集</button>
+      </div>
 
-  <script>
-    function calculate() {
-      const food = document.getElementById("food").value;
-      const grams = parseInt(document.getElementById("grams").value);
+      <div id="note" class="muted">
+        ※ 登録済みの食品データから計算します。見つからない場合はキーワード（例: 「ごはん」「鶏」「牛」「カレー」「野菜」「卵」「魚」「りんご」）で近い食品を推定します。
+      </div>
+    </section>
 
-      if (!food || isNaN(grams)) {
-        document.getElementById("result").innerHTML = "料理名とグラム数を正しく入力してください。";
-        return;
-      }
+    <section id="resultCard" class="card" style="display:none">
+      <h3 class="result-title" id="resultTitle"></h3>
+      <ul class="nutri" id="resultList"></ul>
+      <div class="muted" id="sourceNote"></div>
+    </section>
 
-      // 仮の栄養計算（実際はデータベース/APIが必要）
-      const nutrition = {
-        calories: (1.75 * grams).toFixed(1),
-        protein: (0.05 * grams).toFixed(1),
-        fat: (0.04 * grams).toFixed(1),
-        carbs: (0.3 * grams).toFixed(1),
-        vitaminA: 50,
-        vitaminC: 12,
-        calcium: 20,
-        iron: 1.5
-      };
+    <!-- 食品データの追加・編集パネル -->
+    <section id="editorCard" class="card" style="display:none">
+      <h3 style="margin-top:0">食品データの追加 / 編集（単位：100gあたり）</h3>
 
-      const result = `
-        <h3>${food} ${grams}g の栄養素</h3>
-        <ul>
-          <li>カロリー: ${nutrition.calories} kcal</li>
-          <li>たんぱく質: ${nutrition.protein} g</li>
-          <li>脂質: ${nutrition.fat} g</li>
-          <li>炭水化物: ${nutrition.carbs} g</li>
-          <li>ビタミン: A ${nutrition.vitaminA}µg, C ${nutrition.vitaminC}mg</li>
-          <li>ミネラル: Ca ${nutrition.calcium}mg, Fe ${nutrition.iron}mg</li>
-        </ul>
-      `;
-      document.getElementById("result").innerHTML = result;
+      <label>食品名</label>
+      <input type="text" id="editName" placeholder="例: さば（焼き）">
+
+      <div class="row">
+        <div>
+          <label>エネルギー(kcal)</label>
+          <input type="number" id="editCal" placeholder="例: 200">
+        </div>
+        <div>
+          <label>たんぱく質(g)</label>
+          <input type="number" id="editProtein" placeholder="例: 25">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>脂質(g)</label>
+          <input type="number" id="editFat" placeholder="例: 11">
+        </div>
+        <div>
+          <label>炭水化物(g)</label>
+          <input type="number" id="editCarb" placeholder="例: 0">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>ビタミンA(µg)</label>
+          <input type="number" id="editVA" placeholder="例: 50">
+        </div>
+        <div>
+          <label>ビタミンC(mg)</label>
+          <input type="number" id="editVC" placeholder="例: 2">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>カルシウム(mg)</label>
+          <input type="number" id="editCa" placeholder="例: 20">
+        </div>
+        <div>
+          <label>鉄(mg)</label>
+          <input type="number" id="editFe" placeholder="例: 0.5">
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <button id="saveFoodBtn">保存（ローカルに保存されます）</button>
+        <button id="cancelEditBtn" style="background:#777;margin-left:8px">キャンセル</button>
+      </div>
+
+      <details>
+        <summary class="small">※ローカル保存について（開く）</summary>
+        <p class="small">追加または編集した食品データはブラウザの localStorage に保存されます。別の端末で使う場合や完全に消したい場合は、該当ブラウザで localStorage をクリアしてください。</p>
+      </details>
+    </section>
+
+    <footer style="text-align:center;margin-top:16px" class="small muted">
+      使い方：食品を選ぶか入力 → 重さ入力 → 「栄養計算」を押す。データがなければ「食品データを追加」で登録できます。
+    </footer>
+  </div>
+
+<script>
+/* ------------------------
+   初期食品データ（per 100g の値）
+   数値は概算のサンプルです。必要なら編集してください。
+   ------------------------ */
+const defaultFoods = {
+  "白ごはん": { cal:168, protein:2.5, fat:0.3, carb:37.1, va:0, vc:0, ca:5, fe:0.2 },
+  "カレーライス": { cal:150, protein:3.0, fat:6.0, carb:20.0, va:200, vc:2, ca:30, fe:1.2 },
+  "鶏むね肉(皮なし,焼き)": { cal:165, protein:31.0, fat:3.6, carb:0, va:10, vc:0, ca:15, fe:1.0 },
+  "鮭(焼き)": { cal:200, protein:25.0, fat:11.0, carb:0, va:50, vc:0, ca:20, fe:0.5 },
+  "牛肉(焼き)": { cal:250, protein:26.0, fat:15.0, carb:0, va:5, vc:0, ca:10, fe:2.6 },
+  "卵(ゆで)": { cal:155, protein:13.0, fat:11.0, carb:1.1, va:160, vc:0, ca:50, fe:1.2 },
+  "ミックスサラダ(生)": { cal:25, protein:1.5, fat:0.2, carb:4.0, va:300, vc:15, ca:30, fe:1.0 },
+  "りんご(生)": { cal:52, protein:0.3, fat:0.2, carb:14.0, va:54, vc:4.6, ca:6, fe:0.1 }
+};
+
+/* localStorageキー */
+const LS_KEY = "my_food_db_v1";
+
+/* ユーザ登録済みデータと初期データをマージして使う */
+function loadFoodDB(){
+  let db = {};
+  // default をまず入れる
+  Object.assign(db, defaultFoods);
+  // localStorageにあれば上書き（ユーザーの追加データ）
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const userFoods = JSON.parse(raw);
+      Object.assign(db, userFoods);
     }
-  </script>
+  } catch(e){ console.warn("localStorage読み込み失敗", e); }
+  return db;
+}
+
+let foodDB = loadFoodDB();
+
+/* datalist を更新 */
+function refreshDatalist(){
+  const dl = document.getElementById("foodList");
+  dl.innerHTML = "";
+  const names = Object.keys(foodDB).sort((a,b)=>a.localeCompare(b,'ja'));
+  for(const name of names){
+    const opt = document.createElement("option");
+    opt.value = name;
+    dl.appendChild(opt);
+  }
+}
+refreshDatalist();
+
+/* --- ユーティリティ --- */
+function scale(nPer100g, grams){
+  // grams に合わせて計算して、小数は1〜2桁に整える
+  const val = (nPer100g * grams / 100);
+  // 小数点以下は必要に応じて表示（整数なら整数）
+  return Number(Math.round(val * 100) / 100);
+}
+
+/* キーワードで近い食品を推定する（見つからないときの補助） */
+function guessFoodByKeyword(name){
+  const n = name.toLowerCase();
+  if(n.includes("ごはん") || n.includes("ライス") || n.includes("米")) return "白ごはん";
+  if(n.includes("カレー")) return "カレーライス";
+  if(n.includes("鶏") || n.includes("チキン")) return "鶏むね肉(皮なし,焼き)";
+  if(n.includes("鮭") || n.includes("さけ") || n.includes("サーモン")) return "鮭(焼き)";
+  if(n.includes("牛") || n.includes("ビーフ")) return "牛肉(焼き)";
+  if(n.includes("卵") || n.includes("たまご")) return "卵(ゆで)";
+  if(n.includes("サラダ") || n.includes("野菜")) return "ミックスサラダ(生)";
+  if(n.includes("りんご") || n.includes("果物") || n.includes("フルーツ")) return "りんご(生)";
+  return null;
+}
+
+/* --- 計算処理 --- */
+document.getElementById("calcBtn").addEventListener("click", ()=>{
+  const foodName = document.getElementById("foodInput").value.trim();
+  const gramsRaw = document.getElementById("grams").value;
+  const grams = Number(gramsRaw);
+
+  const resultCard = document.getElementById("resultCard");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultList = document.getElementById("resultList");
+  const sourceNote = document.getElementById("sourceNote");
+
+  if(!foodName){
+    alert("食品名を入力してください（候補から選ぶか自由入力できます）");
+    return;
+  }
+  if(!grams || grams <= 0){
+    alert("正しいグラム数を入力してください（1以上）");
+    return;
+  }
+
+  // きっちり一致する食品を探す（厳密一致）
+  if(foodDB[foodName]){
+    const base = foodDB[foodName];
+    showResult(foodName, base, grams, "登録データ（100gあたり）を使用");
+    return;
+  }
+
+  // よくある場合：ユーザーは「カレー 200」などで入力。キーワードで推定
+  const guessed = guessFoodByKeyword(foodName);
+  if(guessed && foodDB[guessed]){
+    const base = foodDB[guessed];
+    showResult(guessed + "（推定）", base, grams, `入力 "${foodName}" を "${guessed}" と推定して計算`);
+    return;
+  }
+
+  // 見つからない場合はユーザーに追加を促す
+  const add = confirm(`食品データが見つかりません。\n"${foodName}" のデータを追加しますか？\n（「いいえ」を押すと推定が試みられます）`);
+  if(add){
+    openEditorFor(foodName);
+    return;
+  } else {
+    // 推定を試みる（似たキーワード探し）
+    // 探す：食DB内で部分一致するものを探す
+    const candidates = Object.keys(foodDB).filter(n => n.indexOf(foodName) !== -1 || foodName.indexOf(n) !== -1);
+    if(candidates.length > 0){
+      const pick = candidates[0];
+      const base = foodDB[pick];
+      showResult(pick + "（部分一致）", base, grams, `部分一致 "${pick}" を使用`);
+      return;
+    }
+    alert("推定もできませんでした。食品データを追加してください。");
+  }
+});
+
+function showResult(displayName, base, grams, note){
+  const resultCard = document.getElementById("resultCard");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultList = document.getElementById("resultList");
+  const sourceNote = document.getElementById("sourceNote");
+
+  resultTitle.textContent = `${displayName} ${grams}g の栄養素`;
+  // 主要な栄養を計算
+  const cal = scale(base.cal, grams);
+  const protein = scale(base.protein, grams);
+  const fat = scale(base.fat, grams);
+  const carb = scale(base.carb, grams);
+  const va = scale(base.va, grams);
+  const vc = scale(base.vc, grams);
+  const ca = scale(base.ca, grams);
+  const fe = scale(base.fe, grams);
+
+  resultList.innerHTML = `
+    <li>エネルギー: <strong>${cal}</strong> kcal</li>
+    <li>たんぱく質: <strong>${protein}</strong> g</li>
+    <li>脂質: <strong>${fat}</strong> g</li>
+    <li>炭水化物: <strong>${carb}</strong> g</li>
+    <li>ビタミンA: <strong>${va}</strong> µg</li>
+    <li>ビタミンC: <strong>${vc}</strong> mg</li>
+    <li>カルシウム: <strong>${ca}</strong> mg</li>
+    <li>鉄: <strong>${fe}</strong> mg</li>
+  `;
+  sourceNote.textContent = note;
+  resultCard.style.display = "block";
+}
+
+/* --- 編集パネルの制御 --- */
+document.getElementById("addBtn").addEventListener("click", ()=>{
+  openEditorFor(""); // 空の編集画面
+});
+
+document.getElementById("cancelEditBtn").addEventListener("click", ()=>{
+  document.getElementById("editorCard").style.display = "none";
+});
+
+function openEditorFor(prefillName){
+  document.getElementById("editorCard").style.display = "block";
+  document.getElementById("editName").value = prefillName || "";
+  document.getElementById("editCal").value = "";
+  document.getElementById("editProtein").value = "";
+  document.getElementById("editFat").value = "";
+  document.getElementById("editCarb").value = "";
+  document.getElementById("editVA").value = "";
+  document.getElementById("editVC").value = "";
+  document.getElementById("editCa").value = "";
+  document.getElementById("editFe").value = "";
+}
+
+/* 保存ボタン */
+document.getElementById("saveFoodBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("editName").value.trim();
+  if(!name){ alert("食品名を入力してください"); return; }
+
+  // 整数/小数は Number で変換。空欄は0扱い
+  const newItem = {
+    cal: Number(document.getElementById("editCal").value) || 0,
+    protein: Number(document.getElementById("editProtein").value) || 0,
+    fat: Number(document.getElementById("editFat").value) || 0,
+    carb: Number(document.getElementById("editCarb").value) || 0,
+    va: Number(document.getElementById("editVA").value) || 0,
+    vc: Number(document.getElementById("editVC").value) || 0,
+    ca: Number(document.getElementById("editCa").value) || 0,
+    fe: Number(document.getElementById("editFe").value) || 0
+  };
+
+  // ローカル DB を更新して保存
+  foodDB[name] = newItem;
+  try {
+    // localStorageにはユーザーの追加分だけ保存（初期defaultは除く）
+    // 取り出して初期defaultを除いたものを保存
+    const toSave = {};
+    for(const k in foodDB){
+      if(!defaultFoods[k]) toSave[k] = foodDB[k];
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify(toSave));
+    refreshDatalist();
+    alert("保存しました（このブラウザのローカルに保存されます）");
+    document.getElementById("editorCard").style.display = "none";
+  } catch(e){
+    alert("保存に失敗しました: " + e);
+  }
+});
+
+/* --- 起動時に既存の情報があれば datalist を反映 --- */
+refreshDatalist();
+
+/* optional: Enterで計算 */
+document.getElementById("grams").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") document.getElementById("calcBtn").click();
+});
+document.getElementById("foodInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") document.getElementById("calcBtn").click();
+});
+</script>
 </body>
 </html>
-
