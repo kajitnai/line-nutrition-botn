@@ -4,7 +4,7 @@ body {
   padding: 20px;
 }
 .container {
-  max-width: 800px;
+  max-width: 850px;
   margin: 0 auto;
   background: #fff;
   padding: 20px;
@@ -14,6 +14,9 @@ body {
 h1 {
   text-align: center;
   color: #4CAF50;
+}
+.form-area {
+  margin-bottom: 20px;
 }
 label {
   display: inline-block;
@@ -39,7 +42,7 @@ table {
   border-collapse: collapse;
   width: 100%;
   background: #fff;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 th, td {
   border: 1px solid #ccc;
