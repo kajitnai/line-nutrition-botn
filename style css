@@ -1,102 +1,52 @@
-/* ==============================
-   全体の基本スタイル
-============================== */
 body {
-  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-family: Arial, sans-serif;
   background: #f7f7f7;
-  margin: 0;
-  padding: 0;
-  color: #333;
+  padding: 20px;
 }
-
-/* ==============================
-   コンテナ
-============================== */
 .container {
-  max-width: 600px;
-  margin: 40px auto;
+  max-width: 800px;
+  margin: 0 auto;
   background: #fff;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
-/* ==============================
-   見出し
-============================== */
 h1 {
   text-align: center;
   color: #4CAF50;
-  margin-bottom: 20px;
 }
-
-/* ==============================
-   フォーム
-============================== */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
 label {
-  font-weight: bold;
-  margin-bottom: 5px;
+  display: inline-block;
+  margin: 5px 10px;
 }
-
 input {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
+  padding: 5px;
+  width: 100px;
 }
-
-/* ==============================
-   ボタン
-============================== */
 button {
-  padding: 12px;
-  background: #4CAF50;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 18px;
+  padding: 8px 15px;
+  margin-top: 10px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
 }
-
 button:hover {
   background: #45a049;
 }
-
-/* ==============================
-   結果表示エリア
-============================== */
-#result {
-  margin-top: 25px;
-  padding: 15px;
-  background: #f0f9f0;
-  border: 1px solid #d0e9d0;
-  border-radius: 10px;
-  font-size: 16px;
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+  margin-top: 20px;
 }
-
-#result h2 {
-  color: #333;
-  margin-bottom: 10px;
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
 }
-
-#result ul {
-  list-style: none;
-  padding: 0;
+th {
+  background: #4CAF50;
+  color: white;
 }
-
-#result li {
-  padding: 5px 0;
-  border-bottom: 1px solid #eee;
-}
-
-#result li:last-child {
-  border-bottom: none;
-}
-
