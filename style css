@@ -1,10 +1,12 @@
+/* 全体 */
 body {
   font-family: Arial, sans-serif;
   background: #f7f7f7;
   padding: 20px;
+  margin: 0;
 }
 .container {
-  max-width: 850px;
+  max-width: 1000px;
   margin: 0 auto;
   background: #fff;
   padding: 20px;
@@ -25,6 +27,7 @@ label {
 input {
   padding: 5px;
   width: 100px;
+  box-sizing: border-box;
 }
 button {
   padding: 8px 15px;
@@ -38,11 +41,16 @@ button {
 button:hover {
   background: #45a049;
 }
+
+/* テーブル */
+.table-container {
+  overflow-x: auto; /* 横スクロール対応 */
+}
 table {
   border-collapse: collapse;
   width: 100%;
   background: #fff;
-  margin-top: 10px;
+  min-width: 800px;
 }
 th, td {
   border: 1px solid #ccc;
@@ -52,4 +60,28 @@ th, td {
 th {
   background: #4CAF50;
   color: white;
+}
+
+/* レスポンシブ */
+@media screen and (max-width: 768px) {
+  label, input {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+  }
+  input {
+    width: 100%;
+  }
+  fieldset {
+    padding: 10px;
+  }
+  table, th, td {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  button {
+    width: 100%;
+  }
 }
